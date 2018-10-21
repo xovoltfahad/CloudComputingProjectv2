@@ -14,19 +14,11 @@
             android:icon="@drawable/ic_menu_slideshow"
             android:title="My Diary" />
         <item
-            android:id="@+id/nav_manage"
-            android:icon="@drawable/ic_menu_manage"
-            android:title="Tools" />
+            android:id="@+id/nav_logout"
+            android:icon="@android:drawable/ic_secure"
+            android:title="LOGOUT" />
     </group>
 
-    <item android:title="Communicate">
-        <menu>
-            <item
-                android:id="@+id/nav_share"
-                android:icon="@drawable/ic_menu_share"
-                android:title="Share" />
-          
-        </menu>
-    </item>
+
 
 </menu>

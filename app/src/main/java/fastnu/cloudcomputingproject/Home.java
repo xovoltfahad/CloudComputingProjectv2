@@ -4,7 +4,11 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.util.Base64;
@@ -18,9 +22,22 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import com.facebook.AccessToken;
 import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
+import com.facebook.login.LoginManager;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -30,10 +47,14 @@ import java.security.NoSuchAlgorithmException;
 public class Home extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+    GoogleApiClient mGoogleApiClient;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
+
+        FacebookSdk.sdkInitialize( getApplicationContext() );
         setContentView( R.layout.activity_home );
+
         Toolbar toolbar = (Toolbar) findViewById( R.id.toolbar );
         setSupportActionBar( toolbar );
 
@@ -98,8 +119,34 @@ public class Home extends AppCompatActivity
         {
             startActivity( new Intent( this,DiaryTabs.class ) );
         }
+        else if(id== R.id.nav_logout)
+        {
+            String Method=getIntent().getStringExtra( "login-method" );
+                if(Method.equals(  "fb")){
+                    FirebaseAuth.getInstance().signOut();
+                    LoginManager.getInstance().logOut();
+                    startActivity( new Intent( Home.this,Authentication.class ) );
+                    finish();
+                }
+                else if (Method.equals(  "google")) {
+                    GoogleSignInOptions gso = new GoogleSignInOptions.Builder( com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)
+                            .requestEmail()
+                            .build();
+                    GoogleSignInClient googleSignInClient= GoogleSignIn.getClient( this,gso );
+                    googleSignInClient.signOut().addOnCompleteListener( this, new OnCompleteListener <Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            startActivity( new Intent( Home.this,Authentication.class ) );
+                            finish();
+                        }
+                    } );
+
+                }
+        }
         DrawerLayout drawer = (DrawerLayout) findViewById( R.id.drawer_layout );
         drawer.closeDrawer( GravityCompat.START );
         return true;
     }
+
+
 }

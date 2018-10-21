@@ -130,9 +130,11 @@ public class Home extends AppCompatActivity
                 }
                 else if (Method.equals(  "google")) {
                     GoogleSignInOptions gso = new GoogleSignInOptions.Builder( com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)
+                            .requestIdToken(getString(R.string.default_web_client_id))
                             .requestEmail()
                             .build();
                     GoogleSignInClient googleSignInClient= GoogleSignIn.getClient( this,gso );
+                    FirebaseAuth.getInstance().signOut();
                     googleSignInClient.signOut().addOnCompleteListener( this, new OnCompleteListener <Void>() {
                         @Override
                         public void onComplete(@NonNull Task<Void> task) {

@@ -53,7 +53,7 @@ public class Authentication extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_authentication );
-        mAuth = FirebaseAuth.getInstance();
+
 
         FacebookSdk.sdkInitialize(getApplicationContext());
         AppEventsLogger.activateApp(this);
@@ -63,6 +63,7 @@ public class Authentication extends AppCompatActivity {
         fb.setReadPermissions( "email" );
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
 
@@ -119,6 +120,7 @@ public class Authentication extends AppCompatActivity {
         accessTokenTracker.startTracking();
         profileTracker.startTracking();
         //LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("public_profile"));
+        mAuth = FirebaseAuth.getInstance();
     }
 
 
@@ -131,37 +133,42 @@ public class Authentication extends AppCompatActivity {
             // The Task returned from this call is always completed, no need to attach
             // a listener.
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-            handleSignInResult(task);
+            try {
+                GoogleSignInAccount account = task.getResult(ApiException.class);
+                firebaseAuthWithGoogle(account);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+           // handleSignInResult(task);
         }
     }
-    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
-        try {
-           final GoogleSignInAccount account = completedTask.getResult(ApiException.class);
 
-            AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
-            mAuth.signInWithCredential(credential)
-                    .addOnCompleteListener( Authentication.this, new OnCompleteListener <AuthResult>() {
-                        @Override
-                        public void onComplete(@NonNull Task <AuthResult> task) {
-                             if(task.isSuccessful()){
-                                 FirebaseUser user= mAuth.getCurrentUser();
-                                 share.setName( account.getDisplayName() );
-                                 share.setProfilePic( account.getPhotoUrl() );
-                                 startActivity(  new Intent( Authentication.this,Home.class ).putExtra( "login-method","google" ) );
-                                 finish();
-                             }
+    private void firebaseAuthWithGoogle(final GoogleSignInAccount acct) {
+
+
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            share.setName( acct.getDisplayName() );
+                            share.setProfilePic( acct.getPhotoUrl() );
+                            startActivity(  new Intent( Authentication.this,Home.class ).putExtra( "login-method","google" ) );
+                            finish();
+
+                        } else {
+                            Toast.makeText( Authentication.this, "Authentication Error", Toast.LENGTH_SHORT ).show();
                         }
-                    } );
-            // Signed in successfully, show authenticated UI.
 
-
-        } catch (ApiException e) {
-            // The ApiException status code indicates the detailed failure reason.
-            // Please refer to the GoogleSignInStatusCodes class reference for more information.
-            Log.w("Error", "signInResult:failed code=" + e.getStatusCode());
-
-        }
+                        // ...
+                    }
+                });
     }
+
+
     private void handleFacebookAccessToken(AccessToken token) {
 
         AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());

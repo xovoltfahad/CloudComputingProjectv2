@@ -14,9 +14,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -25,9 +33,12 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class Profile extends Fragment {
 
     ImageButton editProfile;
-    TextView name;MysharedPrefrencess share;
+    TextView name,age,city,country,phone,email;
+    MysharedPrefrencess share;
     CircleImageView profilePic;
+    StorageReference storageReference;
 
+    user curentUser;
 
 
     @Override
@@ -43,11 +54,35 @@ public class Profile extends Fragment {
         share= new MysharedPrefrencess( getActivity() );
         editProfile= view.findViewById( R.id.imageButtonEditProfile );
         profilePic= view.findViewById( R.id.profile_image );
+        curentUser = share.getUser();
+        storageReference= FirebaseStorage.getInstance().getReference().child( curentUser.getProfile() );
 
-        new DownlaodImage().execute( share.getProfilePic() );
+        storageReference.getDownloadUrl().addOnSuccessListener( new OnSuccessListener <Uri>() {
+            @Override
+            public void onSuccess(Uri uri) {
+                //uri is actually the download url here
+
+                Glide.with(getContext())
+                        .load(uri)
+                        .into(profilePic);
+            }
+        } );
+
+
+     //   new DownlaodImage().execute( );
 
         name= view.findViewById( R.id.profileFrag_name );
-        name.setText( share.getName() );
+        age= view.findViewById( R.id.profileFrag_age );
+        city= view.findViewById( R.id.profileFrag_city );
+        country= view.findViewById( R.id.profileFrag_country );
+        phone= view.findViewById( R.id.profileFrag_phone );
+        email = view.findViewById( R.id.profileFrag_email );
+        name.setText( curentUser.getName() );
+        age.setText( curentUser.getAge() );
+        city.setText( curentUser.getCity() );
+        country.setText( curentUser.getCountry() );
+        phone.setText( curentUser.getPhone() );
+        email.setText( curentUser.getEmail() );
         editProfile.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick(View view) {

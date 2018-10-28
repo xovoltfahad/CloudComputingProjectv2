@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "343414211640",
+    "firebase_url": "https://cloud-computing-82482.firebaseio.com",
+    "project_id": "cloud-computing-82482",
+    "storage_bucket": "cloud-computing-82482.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:343414211640:android:3f9050d0267d5f35",
+        "android_client_info": {
+          "package_name": "fastnu.cloudcomputingproject"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "343414211640-6cnaspmgppmcst8dvanokq67pp4emvle.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fastnu.cloudcomputingproject",
+            "certificate_hash": "f441cbee67c5cc2591a6388ded24e51d3d32fcd4"
+          }
+        },
+        {
+          "client_id": "343414211640-jjlpfg8flvtenrut5epcud6q08q23rjv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQb98C97jgfGjh1ZKvdAe_lnROCnTZi2w"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "343414211640-jjlpfg8flvtenrut5epcud6q08q23rjv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

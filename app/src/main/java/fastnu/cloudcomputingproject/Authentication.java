@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.facebook.AccessToken;
@@ -35,6 +37,12 @@ import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.auth.UserInfo;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.Arrays;
 
@@ -48,6 +56,8 @@ public class Authentication extends AppCompatActivity {
     SignInButton signInButton;
     int RC_SIGN_IN=123;
     private FirebaseAuth mAuth;
+    Button signup,login;
+    EditText email,password;
     FirebaseUser firebaseUser;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,8 +69,28 @@ public class Authentication extends AppCompatActivity {
         AppEventsLogger.activateApp(this);
         callbackManager = CallbackManager.Factory.create();
         share=  new MysharedPrefrencess( getApplicationContext() );
+        signup =findViewById( R.id.auth_signup );
+        login=findViewById( R.id.authentication_loginBtn );
+        email= findViewById( R.id.authentication_email );
+        password=findViewById( R.id.authentication_password );
+
         fb= findViewById( R.id.login_button );
         fb.setReadPermissions( "email" );
+
+        login.setOnClickListener( new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String Email,Password;
+                Email=email.getText().toString().trim();
+                Password=password.getText().toString().trim();
+                if(!Email.equals( null) &&!Password.equals( null ) ){
+                   signInAppMethod( Email,Password );
+                }
+                else{
+                    Toast.makeText( getApplicationContext(), "Please fill all the empty Fields", Toast.LENGTH_SHORT ).show();
+                }
+            }
+        } );
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -71,6 +101,8 @@ public class Authentication extends AppCompatActivity {
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
         signInButton = findViewById(R.id.sign_in_button);
+        TextView textView = (TextView) signInButton.getChildAt(0);
+        textView.setText("Continue With Google");
         signInButton.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -99,9 +131,9 @@ public class Authentication extends AppCompatActivity {
             public void onSuccess(LoginResult loginResult) {
 
                 Profile profile =Profile.getCurrentProfile();
-                share.setName( profile.getFirstName()+" "+profile.getLastName() );
+                share.setName( profile.getName() );
                 share.setProfilePic( profile.getProfilePictureUri( 150,150 ) );
-               handleFacebookAccessToken(loginResult.getAccessToken());
+               handleFacebookAccessToken(loginResult.getAccessToken(),profile);
 
 
             }
@@ -117,10 +149,58 @@ public class Authentication extends AppCompatActivity {
             }
         } );
 
+        signup.setOnClickListener( new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity( new Intent( Authentication.this,SignUp.class ).putExtra( "login-method","app" ) );
+
+            }
+        } );
+
         accessTokenTracker.startTracking();
         profileTracker.startTracking();
         //LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("public_profile"));
+
         mAuth = FirebaseAuth.getInstance();
+
+        //This is to check if user already signed IN? if yes who's the provider?
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if(currentUser!=null)
+        {
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("users").child( currentUser.getUid().toString() );
+            databaseReference.addValueEventListener( new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    user newuser = new user(  );
+                    newuser = dataSnapshot.getValue(user.class);
+                    share.setUser( newuser );
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            } );
+            for (UserInfo userInfo : currentUser.getProviderData()) {
+                if (userInfo.getProviderId().equals( "facebook.com" )) {
+                    Toast.makeText( this, "Facebook", Toast.LENGTH_SHORT ).show();
+                    startActivity( new Intent( Authentication.this, Home.class ).putExtra( "login-method", "fb" ) );
+                    finish();
+                } else if (userInfo.getProviderId().equals( "google.com" )) {
+                    Toast.makeText( this, "Google", Toast.LENGTH_SHORT ).show();
+                    startActivity( new Intent( Authentication.this, Home.class ).putExtra( "login-method", "google" ) );
+                    finish();
+                }
+                else
+                {
+                    Toast.makeText( this, "app method", Toast.LENGTH_SHORT ).show();
+                    startActivity( new Intent( Authentication.this, Home.class ).putExtra( "login-method", "app" ) );
+                    finish();
+                }
+            }
+
+        }
+        ////user signed iN staus check end here
     }
 
 
@@ -153,12 +233,22 @@ public class Authentication extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
 
+                            boolean isNewUser =task.getResult().getAdditionalUserInfo().isNewUser();
                             FirebaseUser user = mAuth.getCurrentUser();
                             share.setName( acct.getDisplayName() );
                             share.setProfilePic( acct.getPhotoUrl() );
-                            startActivity(  new Intent( Authentication.this,Home.class ).putExtra( "login-method","google" ) );
-                            finish();
-
+                            if(isNewUser) {
+                                startActivity( new Intent( Authentication.this, SignUp.class )
+                                        .putExtra( "login-method", "google" )
+                                        .putExtra( "name",acct.getDisplayName() )
+                                        .putExtra( "profile",acct.getPhotoUrl() )
+                                            );
+                                finish();
+                            }
+                            else {
+                                startActivity( new Intent( Authentication.this, Home.class ).putExtra( "login-method", "google" ) );
+                                finish();
+                            }
                         } else {
                             Toast.makeText( Authentication.this, "Authentication Error", Toast.LENGTH_SHORT ).show();
                         }
@@ -169,7 +259,7 @@ public class Authentication extends AppCompatActivity {
     }
 
 
-    private void handleFacebookAccessToken(AccessToken token) {
+    private void handleFacebookAccessToken(AccessToken token, final Profile profile) {
 
         AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
         mAuth.signInWithCredential(credential)
@@ -178,9 +268,20 @@ public class Authentication extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
 
+                            boolean isNewUser =task.getResult().getAdditionalUserInfo().isNewUser();
+
                             FirebaseUser user = mAuth.getCurrentUser();
-                            startActivity(  new Intent( Authentication.this,Home.class ).putExtra( "login-method","fb" ) );
+                            if(isNewUser){
+                                startActivity(  new Intent( Authentication.this,SignUp.class )
+                                        .putExtra( "login-method","fb" )
+                                        .putExtra( "name",profile.getName() )
+                                        .putExtra( "profile",profile.getProfilePictureUri( 150,150 ) )
+                                );
+                            }
+                            else
+                                startActivity(  new Intent( Authentication.this,Home.class ).putExtra( "login-method","fb" ) );
                             finish();
+
 
                         } else {
                             Toast.makeText( Authentication.this, "Authentication Error", Toast.LENGTH_SHORT ).show();
@@ -191,4 +292,27 @@ public class Authentication extends AppCompatActivity {
                 });
     }
 
+    public void signInAppMethod(String email,String password){
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            startActivity(  new Intent( Authentication.this,Home.class ).putExtra( "login-method","app" ) );
+                            finish();
+                            //updateUI(user);
+                        } else {
+                            // If sign in fails, display a message to the user.
+
+                            Toast.makeText( Authentication.this, "Credentials MisMatched or User Not Exists", Toast.LENGTH_SHORT ).show();
+
+                        }
+
+                        // ...
+                    }
+                });
+    }
 }

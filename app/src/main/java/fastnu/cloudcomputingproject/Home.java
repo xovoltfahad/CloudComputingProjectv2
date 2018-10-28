@@ -35,6 +35,12 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,17 +54,36 @@ public class Home extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     GoogleApiClient mGoogleApiClient;
+    MysharedPrefrencess sharedPref;
+    FirebaseAuth mAuth;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
 
         FacebookSdk.sdkInitialize( getApplicationContext() );
         setContentView( R.layout.activity_home );
-
+        sharedPref= new MysharedPrefrencess( getApplicationContext() );
         Toolbar toolbar = (Toolbar) findViewById( R.id.toolbar );
         setSupportActionBar( toolbar );
+        mAuth = FirebaseAuth.getInstance();
 
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if(currentUser!=null) {
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference( "users" ).child( currentUser.getUid().toString() );
+            databaseReference.addValueEventListener( new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    user newuser = new user();
+                    newuser = dataSnapshot.getValue( user.class );
+                    sharedPref.setUser( newuser );
+                }
 
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            } );
+        }
 
         DrawerLayout drawer = (DrawerLayout) findViewById( R.id.drawer_layout );
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -125,6 +150,7 @@ public class Home extends AppCompatActivity
                 if(Method.equals(  "fb")){
                     FirebaseAuth.getInstance().signOut();
                     LoginManager.getInstance().logOut();
+                    sharedPref.removeAll();
                     startActivity( new Intent( Home.this,Authentication.class ) );
                     finish();
                 }
@@ -138,13 +164,21 @@ public class Home extends AppCompatActivity
                     googleSignInClient.signOut().addOnCompleteListener( this, new OnCompleteListener <Void>() {
                         @Override
                         public void onComplete(@NonNull Task<Void> task) {
+                            sharedPref.removeAll();
                             startActivity( new Intent( Home.this,Authentication.class ) );
                             finish();
                         }
                     } );
 
                 }
-        }
+                else if(Method.equals( "app" )){
+                    FirebaseAuth.getInstance().signOut();
+                    sharedPref.removeAll();
+                    startActivity( new Intent( Home.this,Authentication.class ) );
+                    finish();
+
+                    }
+            }
         DrawerLayout drawer = (DrawerLayout) findViewById( R.id.drawer_layout );
         drawer.closeDrawer( GravityCompat.START );
         return true;

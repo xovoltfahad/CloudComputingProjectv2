@@ -54,21 +54,19 @@ public class Profile extends Fragment {
         share= new MysharedPrefrencess( getActivity() );
         editProfile= view.findViewById( R.id.imageButtonEditProfile );
         profilePic= view.findViewById( R.id.profile_image );
-        curentUser = share.getUser();
-        storageReference= FirebaseStorage.getInstance().getReference().child( curentUser.getProfile() );
 
-        storageReference.getDownloadUrl().addOnSuccessListener( new OnSuccessListener <Uri>() {
+       /* storageReference= FirebaseStorage.getInstance().getReference().child( curentUser.getProfile() );
+
+       storageReference.getDownloadUrl().addOnSuccessListener( new OnSuccessListener <Uri>() {
             @Override
             public void onSuccess(Uri uri) {
                 //uri is actually the download url here
 
-                Glide.with(getContext())
-                        .load(uri)
-                        .into(profilePic);
+
             }
         } );
 
-
+*/
      //   new DownlaodImage().execute( );
 
         name= view.findViewById( R.id.profileFrag_name );
@@ -77,12 +75,7 @@ public class Profile extends Fragment {
         country= view.findViewById( R.id.profileFrag_country );
         phone= view.findViewById( R.id.profileFrag_phone );
         email = view.findViewById( R.id.profileFrag_email );
-        name.setText( curentUser.getName() );
-        age.setText( curentUser.getAge() );
-        city.setText( curentUser.getCity() );
-        country.setText( curentUser.getCountry() );
-        phone.setText( curentUser.getPhone() );
-        email.setText( curentUser.getEmail() );
+
         editProfile.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -110,5 +103,21 @@ public class Profile extends Fragment {
         protected void onPostExecute(Bitmap bitmap) {
             profilePic.setImageBitmap( bitmap );
         }
+    }
+
+    @Override
+    public void onResume() {
+
+        curentUser = share.getUser();
+        Glide.with(getContext())
+                .load(curentUser.getProfile())
+                .into(profilePic);
+        name.setText( curentUser.getName() );
+        age.setText( curentUser.getAge() );
+        city.setText( curentUser.getCity() );
+        country.setText( curentUser.getCountry() );
+        phone.setText( curentUser.getPhone() );
+        email.setText( curentUser.getEmail() );
+        super.onResume();
     }
 }

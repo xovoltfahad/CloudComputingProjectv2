@@ -20,5 +20,12 @@
     <string name="facebook_app_id">214136832648389</string>
     <string name="fb_login_protocol_scheme">fb214136832648389</string>
 
+    <string name="send_review">Send review</string>
+    <string name="cancel">Cancel</string>
+    <string name="later">Later</string>
+    <string name="title">App rating</string>
+    <string name="description">Please write your feedback</string>
+    <string name="defaultComment">This app is pretty cool !</string>
+
 
 </resources>

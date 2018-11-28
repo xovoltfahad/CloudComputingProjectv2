@@ -23,11 +23,15 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -52,7 +56,9 @@ public class EditProfile extends Fragment {
     ImageView profilePic;
     Button saveBtutton;
     EditText name,age,city,country;
+    MysharedPrefrencess sharedPref;
     private File mCameraPhotoFile;
+    user currentUser;
     Uri imageUri;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -65,14 +71,27 @@ public class EditProfile extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated( view, savedInstanceState );
 
+
+        sharedPref=new MysharedPrefrencess( getApplicationContext() );
+        currentUser=sharedPref.getUser();
         name= view.findViewById( R.id.editProfile_name );
         age= view.findViewById( R.id.editProfile_age );
         city= view.findViewById( R.id.editProfile_city );
         country= view.findViewById( R.id.editProfile_country );
         saveBtutton= view.findViewById( R.id.buttonSave );
-        mStorageRef = FirebaseStorage.getInstance().getReference("uploads");
-        mDatabaseRef = FirebaseDatabase.getInstance().getReference("uploads");
+
+        name.setText( currentUser.getName() );
+        age.setText( currentUser.getAge() );
+        city.setText(currentUser.getCity());
+        country.setText( currentUser.getCountry() );
+
+        mStorageRef = FirebaseStorage.getInstance().getReference();
+        mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         profilePic= view.findViewById( R.id.editProfileImage );
+        Glide.with(getContext())
+                .load(currentUser.getProfile())
+                .into(profilePic);
+
         profilePic.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -104,14 +123,23 @@ public class EditProfile extends Fragment {
                     Toast.makeText( getActivity(), "Upload Image First", Toast.LENGTH_SHORT ).show();
                 }
                 DatabaseReference databaseReference= FirebaseDatabase.getInstance().getReference("users").child( FirebaseAuth.getInstance().getCurrentUser().getUid().toString() );
-                if(!name.getText().toString().equals( null ))
+                if(!name.getText().toString().equals( "" ))
                 databaseReference.child( "name" ).setValue( name.getText().toString() );
-                if(!age.getText().toString().equals( null ))
+                else
+                    databaseReference.child( "name" ).setValue( currentUser.getName() );
+                if(!age.getText().toString().equals( "" ))
                 databaseReference.child( "age" ).setValue( age.getText().toString() );
-                if(!city.getText().toString().equals( null ))
+                else
+                    databaseReference.child( "age" ).setValue( currentUser.getAge() );
+                if(!city.getText().toString().equals( "" ))
                 databaseReference.child( "city" ).setValue( city.getText().toString() );
-                if(!country.getText().toString().equals( null ))
+                else
+                    databaseReference.child( "city" ).setValue( currentUser.getCity() );
+                if(!country.getText().toString().equals( "" ))
                 databaseReference.child( "country" ).setValue( country.getText().toString() );
+                else
+                    databaseReference.child( "country" ).setValue( currentUser.getCountry() );
+
 
             }
         } );
@@ -125,16 +153,20 @@ public class EditProfile extends Fragment {
     private void CameraPictureIntent() {
         Intent takePictureIntent = new Intent( MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
-            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+            startActivityForResult(takePictureIntent, CAPTURE_IMAGE_REQUEST);
         }
     }
 
+
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+        super.onActivityResult( requestCode, resultCode, data );
+        if (requestCode == CAPTURE_IMAGE_REQUEST && resultCode == RESULT_OK) {
             Bundle extras= data.getExtras();
             Bitmap bitmap =(Bitmap) (extras != null ? extras.get("data") : null);
 
-            profilePic.setImageBitmap(bitmap);
+            imageUri=getImageUri( getActivity(),bitmap );
+            profilePic.setImageURI(imageUri);
         }
         else if (requestCode == RESULT_GALLERY_PHOTO && resultCode == RESULT_OK ) {
             Uri selectedimg= data.getData();
@@ -146,27 +178,18 @@ public class EditProfile extends Fragment {
             profilePic.setImageURI(selectedimg);
             imageUri=selectedimg;
         }
-
-    }
-    public static File getTempFile(Context context) {
-        String tempFilePath = Environment.getExternalStorageDirectory().getAbsolutePath() +
-                "/TripDiary/" + "temp" + ".jpg";
-        File tempFile = new File(tempFilePath);
-        if(!tempFile.getParentFile().exists()) {
-            tempFile.getParentFile().mkdirs();
-        }
-        return tempFile;
     }
 
-    private Uri getImageUri(Context context, Bitmap inImage) {
+    public Uri getImageUri(Context inContext, Bitmap inImage) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
-        String path = MediaStore.Images.Media.insertImage(context.getContentResolver(), inImage, "Title", null);
-        if(path!=null)
+        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
         return Uri.parse(path);
-        else
-            return null;
     }
+
+
+
+
 
     public String getFileExtension(Uri uri){
         ContentResolver contentResolver = getContext().getContentResolver();
@@ -175,24 +198,57 @@ public class EditProfile extends Fragment {
 
     }
 
-    public void uploadImage(Uri uri){
+
+    public void uploadImage(final Uri uri){
 
         StorageReference imageRef = mStorageRef.child(System.currentTimeMillis()+"."+getFileExtension( uri ));
         imageRef.putFile( uri )
-                .addOnSuccessListener( new OnSuccessListener <UploadTask.TaskSnapshot>() {
-            @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                String id = mDatabaseRef.push().getKey();
-               String url =  taskSnapshot.getMetadata().getReference().getDownloadUrl().toString();
-            mDatabaseRef.child( id ).setValue( "firstImage"+url );
-            }
-        } )
+                .addOnSuccessListener( new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnSuccessListener( new OnSuccessListener <Uri>() {
+                            @Override
+                            public void onSuccess(Uri uri) {
+                                mDatabaseRef = FirebaseDatabase.getInstance().getReference("users").child( FirebaseAuth.getInstance().getCurrentUser().getUid().toString() );
+                                //mDatabaseRef.child( "profile" ).setValue( mAuth.getCurrentUser().getUid().toString()+"."
+                                //+getFileExtension( uri ));
+                                mDatabaseRef.child( "profile" ).setValue(uri.toString() );
+                                DatabaseReference databaseReference1 = FirebaseDatabase.getInstance().getReference( "users" ).child( FirebaseAuth.getInstance().getCurrentUser().getUid().toString() );
+                                databaseReference1.addValueEventListener( new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                        user newuser = new user();
+                                        newuser = dataSnapshot.getValue( user.class );
+                                        sharedPref.setUser( newuser );
+                                        getFragmentManager().popBackStack();
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                    }
+                                } );
+
+
+
+
+                            }
+                        } ).addOnFailureListener( new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText( getContext(), "Image Url Corrupted", Toast.LENGTH_SHORT ).show();
+                            }
+                        } );
+
+                    }
+                } )
                 .addOnFailureListener( new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-
+                        Toast.makeText( getContext(), "Upload UnSuccessfull!", Toast.LENGTH_SHORT ).show();
                     }
                 } );
+
 
 
     }

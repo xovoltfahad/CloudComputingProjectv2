@@ -6,9 +6,9 @@
     tools:context=".OutCity">
 
     <!-- TODO: Update blank fragment layout -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Tab2 fragment" />
 
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/outcity_recyclerview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 </FrameLayout>

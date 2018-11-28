@@ -9,9 +9,13 @@ public class user {
     String profile;
     String email;
 
+
+
+    String postCount;
+
     public user(){}
 
-    public user(String name, String age, String city, String country, String phone, String profile, String email) {
+    public user(String name, String age, String city, String country, String phone, String profile, String email,String postCount) {
         this.name = name;
         this.age = age;
         this.city = city;
@@ -19,6 +23,7 @@ public class user {
         this.phone = phone;
         this.profile = profile;
         this.email = email;
+        this.postCount=postCount;
     }
 
 
@@ -79,6 +84,12 @@ public class user {
     public void setEmail(String email) {
         this.email = email;
     }
+    public String getPostCount() {
+        return postCount;
+    }
 
+    public void setPostCount(String postCount) {
+        this.postCount = postCount;
+    }
 
 }

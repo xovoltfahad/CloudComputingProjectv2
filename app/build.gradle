@@ -32,6 +32,12 @@ dependencies {
     implementation 'com.google.android.gms:play-services-auth:16.0.1'
     implementation 'com.google.firebase:firebase-auth:16.0.4'
 
+    //rate and Review card
+    implementation 'com.stepstone.apprating:app-rating:2.3.0'
+
+    //maps
+
+    implementation 'com.google.android.gms:play-services-location:16.0.0'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'

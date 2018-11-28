@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#41c8bc</color>
-    <color name="colorPrimaryDark">#00574B</color>
+    <color name="colorPrimaryDark">#00574b</color>
     <color name="colorAccent">#fb8bb4</color>
+
+
+    <color name="starColor">#57a6f0</color>
+    <color name="noteDescriptionTextColor">#57a6f0</color>
+    <color name="titleTextColor">#D9141627</color>
+    <color name="descriptionTextColor">#80141627</color>
+    <color name="commentTextColor">#D9141627</color>
 </resources>

@@ -1,7 +1,11 @@
 package fastnu.cloudcomputingproject;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -133,6 +137,7 @@ public class Authentication extends AppCompatActivity {
                 Profile profile =Profile.getCurrentProfile();
                 share.setName( profile.getName() );
                 share.setProfilePic( profile.getProfilePictureUri( 150,150 ) );
+
                handleFacebookAccessToken(loginResult.getAccessToken(),profile);
 
 
@@ -201,6 +206,15 @@ public class Authentication extends AppCompatActivity {
 
         }
         ////user signed iN staus check end here
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    25);
+        }
     }
 
 
@@ -238,10 +252,10 @@ public class Authentication extends AppCompatActivity {
                             share.setName( acct.getDisplayName() );
                             share.setProfilePic( acct.getPhotoUrl() );
                             if(isNewUser) {
-                                startActivity( new Intent( Authentication.this, SignUp.class )
+                                                                startActivity( new Intent( Authentication.this, SignUp.class )
                                         .putExtra( "login-method", "google" )
                                         .putExtra( "name",acct.getDisplayName() )
-                                        .putExtra( "profile",acct.getPhotoUrl() )
+                                        .putExtra( "profile",acct.getPhotoUrl() .toString())//Uri
                                             );
                                 finish();
                             }
@@ -272,10 +286,11 @@ public class Authentication extends AppCompatActivity {
 
                             FirebaseUser user = mAuth.getCurrentUser();
                             if(isNewUser){
+
                                 startActivity(  new Intent( Authentication.this,SignUp.class )
                                         .putExtra( "login-method","fb" )
                                         .putExtra( "name",profile.getName() )
-                                        .putExtra( "profile",profile.getProfilePictureUri( 150,150 ) )
+                                        .putExtra( "profile",profile.getProfilePictureUri( 150,150 ).toString() )//Uri
                                 );
                             }
                             else
